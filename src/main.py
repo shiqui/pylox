@@ -6,6 +6,8 @@ def run(source: str) -> None:
     scanner = Scanner(source)
     print(f"run: {source}")
     scanner.scan_tokens()
+    for token in scanner.tokens:
+        print(token)
 
 
 def run_prompt() -> None:
