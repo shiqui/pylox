@@ -1,73 +1,14 @@
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 from typing import List
 from scanner import Token, TokenType
-
+from parser.expr import Expr, Binary, Grouping, Unary, Literal
+from parser.expr import Visitor as ExprVisitor
+from parser.stmt import Visitor as StmtVisitor
 # Any operation (interpret, resolve, analyze) can apply to any expression (Unary, Binary, etc)
 # This is a double dispatch problem: the outcome depends on operation and expression
 
 
-class Expr(ABC):
-    @abstractmethod
-    def accept(self, visitor: "Visitor"):
-        pass
-
-
-class Visitor(ABC):
-    @abstractmethod
-    def visit_binary_expr(self, expr: "Binary"):
-        pass
-
-    @abstractmethod
-    def visit_grouping_expr(self, expr: "Grouping"):
-        pass
-
-    @abstractmethod
-    def visit_literal_expr(self, expr: "Literal"):
-        pass
-
-    @abstractmethod
-    def visit_unary_expr(self, expr: "Unary"):
-        pass
-
-
-@dataclass
-class Binary(Expr):
-    left: Expr
-    operator: Token
-    right: Expr
-
-    def accept(self, visitor: Visitor):
-        return visitor.visit_binary_expr(self)
-
-
-@dataclass
-class Grouping(Expr):
-    expression: Expr
-
-    def accept(self, visitor: Visitor):
-        return visitor.visit_grouping_expr(self)
-
-
-@dataclass
-class Literal(Expr):
-    value: object
-
-    def accept(self, visitor: Visitor):
-        return visitor.visit_literal_expr(self)
-
-
-@dataclass
-class Unary(Expr):
-    operator: Token
-    right: Expr
-
-    def accept(self, visitor: Visitor):
-        return visitor.visit_unary_expr(self)
-
-
 # Concrete visitors
-class AstPrinter(Visitor):
+class AstPrinter(ExprVisitor):
     def print(self, expr: Expr):
         return expr.accept(self)
 
@@ -86,7 +27,7 @@ class AstPrinter(Visitor):
         return f"({expr.operator.lexeme} {self.print(expr.right)})"
 
 
-class Interpreter(Visitor):
+class Interpreter(ExprVisitor, StmtVisitor):
     def __init__(self, pylox):
         self.pylox = pylox
 
@@ -161,6 +102,12 @@ class Interpreter(Visitor):
             return left != right
         if expr.operator.type == TokenType.EQUAL_EQUAL:
             return left == right
+
+    def visit_expression_stmt(self, stmt):
+        pass
+
+    def visit_print_stmt(self, stmt):
+        pass
 
     def check_number_operands(self, operator: Token, left: object, right: object):
         if isinstance(left, float) and isinstance(right, float):
