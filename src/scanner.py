@@ -102,6 +102,7 @@ class Scanner:
         while not self.is_at_end():
             self.start = self.current
             self.scan_token()
+        self.tokens.append(Token(TokenType.EOF, "", None, self.line))
         return self.tokens
 
     def is_at_end(self) -> bool:

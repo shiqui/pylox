@@ -86,16 +86,6 @@ class AstPrinter(Visitor):
         return f"({expr.operator.lexeme} {self.print(expr.right)})"
 
 
-e = Binary(
-    Unary(Token(TokenType.MINUS, "-", None, 1), Literal(123)),
-    Token(TokenType.STAR, "*", None, 1),
-    Grouping(Literal(45.67)),
-)
-
-printer = AstPrinter()
-print(printer.print(e))
-
-
 class Parser:
     tokens: List[Token]
     current: int = 0
@@ -103,6 +93,12 @@ class Parser:
     def __init__(self, pylox, tokens: List[Token]):
         self.pylox = pylox
         self.tokens = tokens
+
+    def parse(self):
+        try:
+            return self.expression()
+        except ParseError:
+            return None
 
     def expression(self):
         return self.equality()
@@ -138,10 +134,10 @@ class Parser:
         return self.peek().type == TokenType.EOF
 
     def peek(self):
-        return self.tokens.get(self.current)
+        return self.tokens[self.current]
 
     def previous(self):
-        return self.tokens.get(self.current - 1)
+        return self.tokens[self.current - 1]
 
     def comparison(self):
         expr = self.term()
@@ -208,6 +204,24 @@ class Parser:
     def error(self, token: Token, message: str):
         self.pylox.parser_error(token, message)
         return ParseError()
+
+    def synchronize(self):
+        self.advance()
+        while not self.is_at_end():
+            if self.previous().type == TokenType.SEMICOLON:
+                return
+            if self.peek().type in [
+                TokenType.CLASS,
+                TokenType.FUN,
+                TokenType.VAR,
+                TokenType.FOR,
+                TokenType.IF,
+                TokenType.WHILE,
+                TokenType.PRINT,
+                TokenType.RETURN,
+            ]:
+                return
+            self.advance()
 
 
 class ParseError(Exception):

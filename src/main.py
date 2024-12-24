@@ -1,5 +1,6 @@
 from sys import argv
 from scanner import Scanner, TokenType, Token
+from parser import Parser, AstPrinter
 
 
 class Pylox:
@@ -8,10 +9,12 @@ class Pylox:
 
     def run(self, source: str) -> None:
         scanner = Scanner(self, source)
-        print(f"run: {source}")
-        scanner.scan_tokens()
-        for token in scanner.tokens:
-            print(token)
+        tokens = scanner.scan_tokens()
+        parser = Parser(self, tokens)
+        expression = parser.parse()
+        if self.had_error:
+            return
+        print(AstPrinter().print(expression))
 
     def run_prompt(self) -> None:
         while True:
@@ -22,7 +25,6 @@ class Pylox:
             self.had_error = False
 
     def run_file(self, filename: str) -> None:
-        print(f"run_file: {filename}")
         with open(filename) as file:
             self.run(file.read())
         if self.had_error:
