@@ -100,7 +100,8 @@ class Parser:
     tokens: List[Token]
     current: int = 0
 
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, pylox, tokens: List[Token]):
+        self.pylox = pylox
         self.tokens = tokens
 
     def expression(self):
@@ -205,7 +206,7 @@ class Parser:
         raise self.error(self.peek(), message)
 
     def error(self, token: Token, message: str):
-        print(f"[line {token.line}] Error: {message}")
+        self.pylox.parser_error(token, message)
         return ParseError()
 
 

@@ -90,7 +90,8 @@ class Token:
 
 
 class Scanner:
-    def __init__(self, source: str):
+    def __init__(self, pylox, source: str):
+        self.pylox = pylox
         self.source = source
         self.tokens: List[Token] = []
         self.start: int = 0
@@ -163,7 +164,7 @@ class Scanner:
                 elif c.isalpha():
                     self.identifier()
                 else:
-                    print(f"[Line: {self.line}] Error: Unexpected character {c}")
+                    self.pylox.scanner_error(self.line, f"Unexpected character {c}")
         return
 
     def add_token(self, token_type: TokenType, literal: object = None) -> None:
