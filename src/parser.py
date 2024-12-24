@@ -86,6 +86,93 @@ class AstPrinter(Visitor):
         return f"({expr.operator.lexeme} {self.print(expr.right)})"
 
 
+class Interpreter(Visitor):
+    def __init__(self, pylox):
+        self.pylox = pylox
+
+    def interpret(self, expr: Expr):
+        try:
+            value = self.evaluate(expr)
+            print(self.stringify(value))
+        except RuntimeError as e:
+            self.pylox.runtime_error(e)
+            return None
+
+    def stringify(self, value: object):
+        if value is None:
+            return "nil"
+        if isinstance(value, float):
+            text = str(value)
+            if text.endswith(".0"):
+                text = text[:-2]
+            return text
+        return str(value)
+
+    def evaluate(self, expr: Expr):
+        return expr.accept(self)
+
+    def visit_literal_expr(self, expr: Literal):
+        return expr.value
+
+    def visit_grouping_expr(self, expr: Grouping):
+        return self.evaluate(expr.expression)
+
+    def visit_unary_expr(self, expr: Unary):
+        right = self.evaluate(expr.right)
+        if expr.operator.type == TokenType.MINUS:
+            self.check_number_operand(expr.operator, right)
+            return -right
+        if expr.operator.type == TokenType.BANG:
+            return not right
+
+    def visit_binary_expr(self, expr: Binary):
+        left = self.evaluate(expr.left)
+        right = self.evaluate(expr.right)
+        if expr.operator.type == TokenType.MINUS:
+            self.check_number_operands(expr.operator, left, right)
+            return left - right
+        if expr.operator.type == TokenType.PLUS:
+            if isinstance(left, float) and isinstance(right, float):
+                return left + right
+            if isinstance(left, str) and isinstance(right, str):
+                return left + right
+            raise RuntimeError(
+                expr.operator, "Operands must be two numbers or two strings."
+            )
+        if expr.operator.type == TokenType.SLASH:
+            self.check_number_operands(expr.operator, left, right)
+            return left / right
+        if expr.operator.type == TokenType.STAR:
+            self.check_number_operands(expr.operator, left, right)
+            return left * right
+        if expr.operator.type == TokenType.GREATER:
+            self.check_number_operands(expr.operator, left, right)
+            return left > right
+        if expr.operator.type == TokenType.GREATER_EQUAL:
+            self.check_number_operands(expr.operator, left, right)
+            return left >= right
+        if expr.operator.type == TokenType.LESS:
+            self.check_number_operands(expr.operator, left, right)
+            return left < right
+        if expr.operator.type == TokenType.LESS_EQUAL:
+            self.check_number_operands(expr.operator, left, right)
+            return left <= right
+        if expr.operator.type == TokenType.BANG_EQUAL:
+            return left != right
+        if expr.operator.type == TokenType.EQUAL_EQUAL:
+            return left == right
+
+    def check_number_operands(self, operator: Token, left: object, right: object):
+        if isinstance(left, float) and isinstance(right, float):
+            return
+        raise RuntimeError(operator, "Operands must be numbers.")
+
+    def check_number_operand(self, operator: Token, operand: object):
+        if isinstance(operand, float):
+            return
+        raise RuntimeError(operator, "Operand must be a number.")
+
+
 class Parser:
     tokens: List[Token]
     current: int = 0
@@ -226,3 +313,10 @@ class Parser:
 
 class ParseError(Exception):
     pass
+
+
+class RuntimeError(Exception):
+    def __init__(self, token: Token, message: str):
+        self.token = token
+        self.message = message
+        super().__init__(message)

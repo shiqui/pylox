@@ -1,20 +1,32 @@
 from sys import argv
 from scanner import Scanner, TokenType, Token
-from parser import Parser, AstPrinter
+from parser import Parser, AstPrinter, Interpreter
 
 
 class Pylox:
     def __init__(self):
         self.had_error = False
+        self.had_runtime_error = False
+        self.interpreter = Interpreter(self)
 
     def run(self, source: str) -> None:
+        # Scan
+        print("\nScanner:")
         scanner = Scanner(self, source)
         tokens = scanner.scan_tokens()
+        for token in tokens:
+            print(token)
+        # Parse
+        print("\nParser:")
         parser = Parser(self, tokens)
         expression = parser.parse()
         if self.had_error:
             return
         print(AstPrinter().print(expression))
+        # Interpret
+        print("\nInterpreter:")
+        self.interpreter.interpret(expression)
+        print()
 
     def run_prompt(self) -> None:
         while True:
@@ -29,19 +41,25 @@ class Pylox:
             self.run(file.read())
         if self.had_error:
             exit(65)
-
-    def scanner_error(self, line: int, message: str) -> None:
-        self.report(line, "", message)
+        if self.had_runtime_error:
+            exit(70)
 
     def report(self, line: int, where: str, message: str) -> None:
         print(f"[line {line}] Error{where}: {message}")
         self.had_error = True
+
+    def scanner_error(self, line: int, message: str) -> None:
+        self.report(line, "", message)
 
     def parser_error(self, token: Token, message: str) -> None:
         if token.type == TokenType.EOF:
             self.report(token.line, " at end", message)
         else:
             self.report(token.line, f" at '{token.lexeme}'", message)
+
+    def runtime_error(self, error: RuntimeError) -> None:
+        print(f"{error.message}\n[line {error.token.line}]")
+        self.had_runtime_error = True
 
 
 if __name__ == "__main__":

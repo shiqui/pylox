@@ -86,7 +86,7 @@ class Token:
     line: int
 
     def __str__(self):
-        return f"{self.type} {self.lexeme} {self.literal}"
+        return f"{self.type:20} {self.lexeme:10} {self.literal}"
 
 
 class Scanner:
