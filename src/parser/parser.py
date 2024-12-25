@@ -1,7 +1,18 @@
 from typing import List
 from scanner import Token, TokenType
-from parser.expr import Expr, Binary, Grouping, Unary, Literal, Visitor as ExprVisitor
-from parser.stmt import Stmt, Print, Expression, Visitor as StmtVisitor
+from parser.expr import (
+    Expr,
+    Binary,
+    Grouping,
+    Unary,
+    Literal,
+    Variable,
+    Visitor as ExprVisitor,
+)
+from parser.stmt import Stmt, Print, Expression, Var, Visitor as StmtVisitor
+from environment import Environment
+from error import ParseError, RuntimeError
+
 # Any operation (interpret, resolve, analyze) can apply to any expression (Unary, Binary, etc)
 # This is a double dispatch problem: the outcome depends on operation and expression
 
@@ -29,6 +40,7 @@ class AstPrinter(ExprVisitor):
 class Interpreter(ExprVisitor, StmtVisitor):
     def __init__(self, pylox):
         self.pylox = pylox
+        self.environment = Environment()
 
     def interpret(self, statements: List[Stmt]):
         try:
@@ -60,6 +72,15 @@ class Interpreter(ExprVisitor, StmtVisitor):
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+
+    def visit_var_stmt(self, stmt):
+        value = None
+        if stmt.initializer:
+            value = self.evaluate(stmt.initializer)
+        self.environment.define(stmt.name.lexeme, value)
+
+    def visit_variable_expr(self, expr):
+        return self.environment.get(expr.name)
 
     def visit_literal_expr(self, expr: Literal):
         return expr.value
@@ -133,20 +154,22 @@ class Parser:
 
     def parse(self):
         statements: List[Stmt] = []
-        try:
-            while not self.is_at_end():
-                statements.append(self.statement())
+        while not self.is_at_end():
+            statements.append(self.declaration())
 
-            return statements
-        except ParseError:
-            return None
-        # try:
-        #     return self.expression()
-        # except ParseError:
-        #     return None
+        return statements
 
     def expression(self):
         return self.equality()
+
+    def declaration(self):
+        try:
+            if self.match(TokenType.VAR):
+                return self.var_declaration()
+            return self.statement()
+        except ParseError:
+            self.synchronize()
+            return None
 
     def statement(self):
         if self.match(TokenType.PRINT):
@@ -158,6 +181,14 @@ class Parser:
         value = self.expression()
         self.consume(TokenType.BANG, "Expect '!' after value.")
         return Print(value)
+
+    def var_declaration(self):
+        name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+        initializer = None
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name, initializer)
 
     def expression_statement(self):
         expr = self.expression()
@@ -251,6 +282,8 @@ class Parser:
             return Literal(None)
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+        if self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous())
         if self.match(TokenType.LEFT_PAREN):
             expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
@@ -283,14 +316,3 @@ class Parser:
             ]:
                 return
             self.advance()
-
-
-class ParseError(Exception):
-    pass
-
-
-class RuntimeError(Exception):
-    def __init__(self, token: Token, message: str):
-        self.token = token
-        self.message = message
-        super().__init__(message)
