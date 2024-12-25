@@ -1,8 +1,7 @@
 from typing import List
 from scanner import Token, TokenType
-from parser.expr import Expr, Binary, Grouping, Unary, Literal
-from parser.expr import Visitor as ExprVisitor
-from parser.stmt import Visitor as StmtVisitor
+from parser.expr import Expr, Binary, Grouping, Unary, Literal, Visitor as ExprVisitor
+from parser.stmt import Stmt, Print, Expression, Visitor as StmtVisitor
 # Any operation (interpret, resolve, analyze) can apply to any expression (Unary, Binary, etc)
 # This is a double dispatch problem: the outcome depends on operation and expression
 
@@ -31,10 +30,10 @@ class Interpreter(ExprVisitor, StmtVisitor):
     def __init__(self, pylox):
         self.pylox = pylox
 
-    def interpret(self, expr: Expr):
+    def interpret(self, statements: List[Stmt]):
         try:
-            value = self.evaluate(expr)
-            print(self.stringify(value))
+            for statement in statements:
+                self.execute(statement)
         except RuntimeError as e:
             self.pylox.runtime_error(e)
             return None
@@ -51,6 +50,16 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def evaluate(self, expr: Expr):
         return expr.accept(self)
+
+    def execute(self, stmt: Stmt):
+        return stmt.accept(self)
+
+    def visit_expression_stmt(self, stmt: Expression):
+        self.evaluate(stmt.expression)
+
+    def visit_print_stmt(self, stmt: Print):
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
 
     def visit_literal_expr(self, expr: Literal):
         return expr.value
@@ -103,12 +112,6 @@ class Interpreter(ExprVisitor, StmtVisitor):
         if expr.operator.type == TokenType.EQUAL_EQUAL:
             return left == right
 
-    def visit_expression_stmt(self, stmt):
-        pass
-
-    def visit_print_stmt(self, stmt):
-        pass
-
     def check_number_operands(self, operator: Token, left: object, right: object):
         if isinstance(left, float) and isinstance(right, float):
             return
@@ -129,13 +132,37 @@ class Parser:
         self.tokens = tokens
 
     def parse(self):
+        statements: List[Stmt] = []
         try:
-            return self.expression()
+            while not self.is_at_end():
+                statements.append(self.statement())
+
+            return statements
         except ParseError:
             return None
+        # try:
+        #     return self.expression()
+        # except ParseError:
+        #     return None
 
     def expression(self):
         return self.equality()
+
+    def statement(self):
+        if self.match(TokenType.PRINT):
+            return self.print_statement()
+        else:
+            return self.expression_statement()
+
+    def print_statement(self):
+        value = self.expression()
+        self.consume(TokenType.BANG, "Expect '!' after value.")
+        return Print(value)
+
+    def expression_statement(self):
+        expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
 
     def equality(self):
         expr = self.comparison()
