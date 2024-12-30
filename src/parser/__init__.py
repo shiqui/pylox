@@ -1,1 +1,1 @@
-from parser.parser import Parser, Interpreter, AstPrinter  # noqa: F401
+from parser.parser import Parser  # noqa: F401
