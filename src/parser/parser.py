@@ -10,7 +10,7 @@ from parser.expr import (
     Assign,
     Visitor as ExprVisitor,
 )
-from parser.stmt import Stmt, Print, Expression, Var, Visitor as StmtVisitor
+from parser.stmt import Stmt, Print, Expression, Var, Block, Visitor as StmtVisitor
 from environment import Environment
 from error import ParseError, RuntimeError
 
@@ -66,6 +66,18 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def execute(self, stmt: Stmt):
         return stmt.accept(self)
+
+    def execute_block(self, statements: List[Stmt], environment: Environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous
+
+    def visit_block_stmt(self, stmt: Block):
+        self.execute_block(stmt.statements, Environment(self.environment))
 
     def visit_expression_stmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
@@ -191,6 +203,8 @@ class Parser:
     def statement(self):
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        elif self.match(TokenType.LEFT_BRACE):
+            return Block(self.block())
         else:
             return self.expression_statement()
 
@@ -211,6 +225,13 @@ class Parser:
         expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return Expression(expr)
+
+    def block(self):
+        statements: List[Stmt] = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            statements.append(self.declaration())
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statements
 
     def equality(self):
         expr = self.comparison()

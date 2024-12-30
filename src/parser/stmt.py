@@ -24,6 +24,10 @@ class Visitor(ABC):
     def visit_var_stmt(self, stmt: "Var"):
         pass
 
+    @abstractmethod
+    def visit_block_stmt(self, stmt: "Block"):
+        pass
+
 
 # Implementations
 @dataclass
@@ -49,3 +53,11 @@ class Var(Stmt):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_var_stmt(self)
+
+
+@dataclass
+class Block(Stmt):
+    statements: list[Stmt]
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_block_stmt(self)
