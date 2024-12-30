@@ -7,6 +7,7 @@ from parser.expr import (
     Unary,
     Literal,
     Variable,
+    Assign,
     Visitor as ExprVisitor,
 )
 from parser.stmt import Stmt, Print, Expression, Var, Visitor as StmtVisitor
@@ -78,6 +79,11 @@ class Interpreter(ExprVisitor, StmtVisitor):
         if stmt.initializer:
             value = self.evaluate(stmt.initializer)
         self.environment.define(stmt.name.lexeme, value)
+
+    def visit_assign_expr(self, expr: Assign):
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
     def visit_variable_expr(self, expr):
         return self.environment.get(expr.name)
@@ -160,7 +166,18 @@ class Parser:
         return statements
 
     def expression(self):
-        return self.equality()
+        return self.assignment()
+
+    def assignment(self):
+        expr = self.equality()
+        if self.match(TokenType.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+            if isinstance(expr, Variable):
+                name = expr.name
+                return Assign(name, value)
+            self.error(equals, "Invalid assignment target.")
+        return expr
 
     def declaration(self):
         try:
@@ -179,7 +196,7 @@ class Parser:
 
     def print_statement(self):
         value = self.expression()
-        self.consume(TokenType.BANG, "Expect '!' after value.")
+        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
 
     def var_declaration(self):

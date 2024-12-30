@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from scanner import Token
 
 
+# Interfaces
 class Expr(ABC):
     @abstractmethod
     def accept(self, visitor: "Visitor"):
@@ -30,7 +31,12 @@ class Visitor(ABC):
     def visit_variable_expr(self, expr: "Variable"):
         pass
 
+    @abstractmethod
+    def visit_assign_expr(self, expr: "Assign"):
+        pass
 
+
+# Implementations
 @dataclass
 class Binary(Expr):
     left: Expr
@@ -72,3 +78,12 @@ class Variable(Expr):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_variable_expr(self)
+
+
+@dataclass
+class Assign(Expr):
+    name: Token
+    value: Expr
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_assign_expr(self)

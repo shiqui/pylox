@@ -4,6 +4,7 @@ from parser.expr import Expr
 from scanner import Token
 
 
+# Interfaces
 class Stmt(ABC):
     @abstractmethod
     def accept(self, visitor: "Visitor"):
@@ -24,6 +25,7 @@ class Visitor(ABC):
         pass
 
 
+# Implementations
 @dataclass
 class Expression(Stmt):
     expression: Expr
