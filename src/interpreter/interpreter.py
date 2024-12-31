@@ -10,7 +10,16 @@ from parser.expr import (
     Logical,
     Visitor as ExprVisitor,
 )
-from parser.stmt import Stmt, Print, Expression, Block, Var, If, Visitor as StmtVisitor
+from parser.stmt import (
+    Stmt,
+    Print,
+    Expression,
+    Block,
+    Var,
+    If,
+    While,
+    Visitor as StmtVisitor,
+)
 from environment import Environment
 from error import RuntimeError
 
@@ -68,6 +77,10 @@ class Interpreter(ExprVisitor, StmtVisitor):
         if stmt.initializer:
             value = self.evaluate(stmt.initializer)
         self.environment.define(stmt.name.lexeme, value)
+
+    def visit_while_stmt(self, stmt: While):
+        while self.evaluate(stmt.condition):
+            self.execute(stmt.body)
 
     def visit_if_stmt(self, stmt: If):
         if self.evaluate(stmt.condition):

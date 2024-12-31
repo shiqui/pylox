@@ -32,6 +32,10 @@ class Visitor(ABC):
     def visit_if_stmt(self, stmt: "If"):
         pass
 
+    @abstractmethod
+    def visit_while_stmt(self, stmt: "While"):
+        pass
+
 
 # Implementations
 @dataclass
@@ -75,3 +79,12 @@ class If(Stmt):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_if_stmt(self)
+
+
+@dataclass
+class While(Stmt):
+    condition: Expr
+    body: Stmt
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_while_stmt(self)
