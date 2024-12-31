@@ -7,8 +7,9 @@ from parser.expr import (
     Literal,
     Variable,
     Assign,
+    Logical,
 )
-from parser.stmt import Stmt, Print, Expression, Var, Block
+from parser.stmt import Stmt, Print, Expression, Var, If, Block
 from error import ParseError
 
 
@@ -31,7 +32,7 @@ class Parser:
         return self.assignment()
 
     def assignment(self):
-        expr = self.equality()
+        expr = self._or()
         if self.match(TokenType.EQUAL):
             equals = self.previous()
             value = self.assignment()
@@ -39,6 +40,26 @@ class Parser:
                 name = expr.name
                 return Assign(name, value)
             self.error(equals, "Invalid assignment target.")
+        return expr
+
+    def _or(self):
+        expr = self._and()
+
+        while self.match(TokenType.OR):
+            operator = self.previous()
+            right = self._and()
+            expr = Logical(expr, operator, right)
+
+        return expr
+
+    def _and(self):
+        expr = self.equality()
+
+        while self.match(TokenType.AND):
+            operator = self.previous()
+            right = self.equality()
+            expr = Logical(expr, operator, right)
+
         return expr
 
     def declaration(self):
@@ -55,8 +76,22 @@ class Parser:
             return self.print_statement()
         elif self.match(TokenType.LEFT_BRACE):
             return Block(self.block())
+        elif self.match(TokenType.IF):
+            return self.if_statement()
         else:
             return self.expression_statement()
+
+    def if_statement(self):
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        condition = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+
+        then_branch = self.statement()
+        else_branch = None
+        if self.match(TokenType.ELSE):
+            else_branch = self.statement()
+
+        return If(condition, then_branch, else_branch)
 
     def print_statement(self):
         value = self.expression()

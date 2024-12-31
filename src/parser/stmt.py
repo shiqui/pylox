@@ -28,6 +28,10 @@ class Visitor(ABC):
     def visit_block_stmt(self, stmt: "Block"):
         pass
 
+    @abstractmethod
+    def visit_if_stmt(self, stmt: "If"):
+        pass
+
 
 # Implementations
 @dataclass
@@ -61,3 +65,13 @@ class Block(Stmt):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_block_stmt(self)
+
+
+@dataclass
+class If(Stmt):
+    condition: Expr
+    then_branch: Stmt
+    else_branch: Stmt
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_if_stmt(self)

@@ -7,9 +7,10 @@ from parser.expr import (
     Unary,
     Literal,
     Assign,
+    Logical,
     Visitor as ExprVisitor,
 )
-from parser.stmt import Stmt, Print, Expression, Block, Visitor as StmtVisitor
+from parser.stmt import Stmt, Print, Expression, Block, Var, If, Visitor as StmtVisitor
 from environment import Environment
 from error import RuntimeError
 
@@ -62,11 +63,17 @@ class Interpreter(ExprVisitor, StmtVisitor):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
 
-    def visit_var_stmt(self, stmt):
+    def visit_var_stmt(self, stmt: Var):
         value = None
         if stmt.initializer:
             value = self.evaluate(stmt.initializer)
         self.environment.define(stmt.name.lexeme, value)
+
+    def visit_if_stmt(self, stmt: If):
+        if self.evaluate(stmt.condition):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch:
+            self.execute(stmt.else_branch)
 
     def visit_assign_expr(self, expr: Assign):
         value = self.evaluate(expr.value)
@@ -78,6 +85,16 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def visit_literal_expr(self, expr: Literal):
         return expr.value
+
+    def visit_logical_expr(self, expr: Logical):
+        left = self.evaluate(expr.left)
+        if expr.operator.type == TokenType.OR:
+            if left:
+                return left
+        else:
+            if not left:
+                return left
+        return self.evaluate(expr.right)
 
     def visit_grouping_expr(self, expr: Grouping):
         return self.evaluate(expr.expression)

@@ -35,6 +35,10 @@ class Visitor(ABC):
     def visit_assign_expr(self, expr: "Assign"):
         pass
 
+    @abstractmethod
+    def visit_logical_expr(self, expr: "Logical"):
+        pass
+
 
 # Implementations
 @dataclass
@@ -87,3 +91,13 @@ class Assign(Expr):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_assign_expr(self)
+
+
+@dataclass
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_logical_expr(self)
