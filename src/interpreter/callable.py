@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from time import time_ns
 
-from environment import Environment
+from interpreter.environment import Environment
 from interpreter.error import Return as ReturnError
 from parser.stmt import Function
 
@@ -28,14 +28,15 @@ class Clock(LoxCallable):
 
 
 class LoxFunction(LoxCallable):
-    def __init__(self, declaration: Function):
+    def __init__(self, declaration: Function, closure: Environment):
         self.declaration = declaration
+        self.closure = closure
 
     def arity(self) -> int:
         return len(self.declaration.params)
 
     def call(self, interpreter, arguments):
-        environment = Environment(interpreter.globals)
+        environment = Environment(self.closure)
         for i in range(len(self.declaration.params)):
             environment.define(self.declaration.params[i].lexeme, arguments[i])
 

@@ -24,7 +24,7 @@ from parser.stmt import (
     Function,
     Visitor as StmtVisitor,
 )
-from environment import Environment
+from interpreter.environment import Environment
 from interpreter.error import Return as ReturnError, RuntimeError
 
 
@@ -75,7 +75,7 @@ class Interpreter(ExprVisitor, StmtVisitor):
         self.evaluate(stmt.expression)
 
     def visit_function_stmt(self, stmt: Function):
-        function = LoxFunction(stmt)
+        function = LoxFunction(stmt, self.environment)
         self.environment.define(stmt.name.lexeme, function)
 
     def visit_print_stmt(self, stmt: Print):
