@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from time import time_ns
 
 from environment import Environment
+from interpreter.error import Return as ReturnError
 from parser.stmt import Function
 
 
@@ -37,7 +38,11 @@ class LoxFunction(LoxCallable):
         environment = Environment(interpreter.globals)
         for i in range(len(self.declaration.params)):
             environment.define(self.declaration.params[i].lexeme, arguments[i])
-        interpreter.execute_block(self.declaration.body, environment)
+
+        try:
+            interpreter.execute_block(self.declaration.body, environment)
+        except ReturnError as e:
+            return e.value
 
     def __str__(self):
         return f"<fn {self.declaration.name.lexeme}>"

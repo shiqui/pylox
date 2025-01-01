@@ -11,8 +11,8 @@ from parser.expr import (
     Logical,
     Call,
 )
-from parser.stmt import Stmt, Print, Expression, Var, If, While, Block, Function
-from error import ParseError
+from parser.stmt import Return, Stmt, Print, Expression, Var, If, While, Block, Function
+from parser.error import ParseError
 
 
 class Parser:
@@ -86,6 +86,8 @@ class Parser:
             return self.while_statement()
         elif self.match(TokenType.FOR):
             return self.for_statement()
+        elif self.match(TokenType.RETURN):
+            return self.return_statement()
         else:
             return self.expression_statement()
 
@@ -135,6 +137,14 @@ class Parser:
         value = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+    def return_statement(self):
+        keyword = self.previous()
+        value = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyword, value)
 
     def var_declaration(self):
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")

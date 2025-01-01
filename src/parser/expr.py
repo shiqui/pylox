@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import List
 from scanner import Token
 
 

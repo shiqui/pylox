@@ -13,6 +13,7 @@ from parser.expr import (
     Visitor as ExprVisitor,
 )
 from parser.stmt import (
+    Return,
     Stmt,
     Print,
     Expression,
@@ -24,7 +25,7 @@ from parser.stmt import (
     Visitor as StmtVisitor,
 )
 from environment import Environment
-from error import RuntimeError
+from interpreter.error import Return as ReturnError, RuntimeError
 
 
 class Interpreter(ExprVisitor, StmtVisitor):
@@ -80,6 +81,12 @@ class Interpreter(ExprVisitor, StmtVisitor):
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+
+    def visit_return_stmt(self, stmt: Return):
+        value = None
+        if stmt.value:
+            value = self.evaluate(stmt.value)
+        raise ReturnError(value)
 
     def visit_var_stmt(self, stmt: Var):
         value = None

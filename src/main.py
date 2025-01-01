@@ -2,7 +2,7 @@ from sys import argv
 from scanner import Scanner, TokenType, Token
 from parser import Parser
 from interpreter import Interpreter
-from error import RuntimeError
+from interpreter.error import RuntimeError
 
 
 class Pylox:

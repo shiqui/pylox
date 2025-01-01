@@ -41,6 +41,10 @@ class Visitor(ABC):
     def visit_function_stmt(self, stmt: "Function"):
         pass
 
+    @abstractmethod
+    def visit_return_stmt(self, stmt: "Return"):
+        pass
+
 
 # Implementations
 @dataclass
@@ -103,3 +107,12 @@ class Function(Expr):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_function_stmt(self)
+
+
+@dataclass
+class Return(Stmt):
+    keyword: Token
+    value: Expr
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_return_stmt(self)

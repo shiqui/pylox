@@ -1,6 +1,6 @@
 from typing import Dict
 from scanner import Token
-from error import RuntimeError
+from interpreter.error import RuntimeError
 
 
 class Environment:
