@@ -1,6 +1,8 @@
 from typing import List
+from interpreter.callable import Clock, LoxCallable, LoxFunction
 from scanner import Token, TokenType
 from parser.expr import (
+    Call,
     Expr,
     Binary,
     Grouping,
@@ -18,6 +20,7 @@ from parser.stmt import (
     Var,
     If,
     While,
+    Function,
     Visitor as StmtVisitor,
 )
 from environment import Environment
@@ -27,7 +30,9 @@ from error import RuntimeError
 class Interpreter(ExprVisitor, StmtVisitor):
     def __init__(self, pylox):
         self.pylox = pylox
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
+        self.globals.define("clock", Clock())
 
     def interpret(self, statements: List[Stmt]):
         try:
@@ -67,6 +72,10 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def visit_expression_stmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
+
+    def visit_function_stmt(self, stmt: Function):
+        function = LoxFunction(stmt)
+        self.environment.define(stmt.name.lexeme, function)
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
@@ -156,6 +165,18 @@ class Interpreter(ExprVisitor, StmtVisitor):
             return left != right
         if expr.operator.type == TokenType.EQUAL_EQUAL:
             return left == right
+
+    def visit_call_expr(self, expr: Call):
+        callee = self.evaluate(expr.callee)
+        arguments = [self.evaluate(arg) for arg in expr.arguments]
+        if not isinstance(callee, LoxCallable):
+            raise RuntimeError(expr.paren, "Can only call functions and classes.")
+        if len(arguments) != callee.arity():
+            raise RuntimeError(
+                expr.paren,
+                f"Expected {callee.arity()} arguments but got {len(arguments)}.",
+            )
+        return callee.call(self, arguments)
 
     def check_number_operands(self, operator: Token, left: object, right: object):
         if isinstance(left, float) and isinstance(right, float):

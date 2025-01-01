@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import List
 from parser.expr import Expr
 from scanner import Token
 
@@ -34,6 +35,10 @@ class Visitor(ABC):
 
     @abstractmethod
     def visit_while_stmt(self, stmt: "While"):
+        pass
+
+    @abstractmethod
+    def visit_function_stmt(self, stmt: "Function"):
         pass
 
 
@@ -88,3 +93,13 @@ class While(Stmt):
 
     def accept(self, visitor: Visitor):
         return visitor.visit_while_stmt(self)
+
+
+@dataclass
+class Function(Expr):
+    name: Token
+    params: List[Token]
+    body: List[Stmt]
+
+    def accept(self, visitor: Visitor):
+        return visitor.visit_function_stmt(self)
