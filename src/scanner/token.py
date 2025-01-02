@@ -86,3 +86,16 @@ class Token:
 
     def __str__(self):
         return f"{self.type:20} {self.lexeme:10} {self.literal}"
+
+    def __hash__(self):
+        return hash((self.type, self.lexeme, self.literal, self.line))
+
+    def __eq__(self, other):
+        if isinstance(other, Token):
+            return (self.type, self.lexeme, self.literal, self.line) == (
+                other.type,
+                other.lexeme,
+                other.literal,
+                other.line,
+            )
+        return False

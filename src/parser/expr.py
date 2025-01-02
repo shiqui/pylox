@@ -84,6 +84,14 @@ class Variable(Expr):
     def accept(self, visitor: Visitor):
         return visitor.visit_variable_expr(self)
 
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        if isinstance(other, Variable):
+            return self.name == other.name
+        return False
+
 
 @dataclass
 class Assign(Expr):

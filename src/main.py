@@ -2,6 +2,7 @@ from sys import argv
 from scanner import Scanner, TokenType, Token
 from parser import Parser
 from interpreter import Interpreter
+from resolver import Resolver
 from interpreter.error import RuntimeError
 
 
@@ -12,17 +13,20 @@ class Pylox:
         self.interpreter = Interpreter(self)
 
     def run(self, source: str) -> None:
-        # Scan
+        # Scan (Characters to Tokens)
         scanner = Scanner(self, source)
         tokens = scanner.scan_tokens()
-        # for token in tokens:
-        #     print(token)
-        # Parse
+        # Parse (Tokens to AST)
         parser = Parser(self, tokens)
         statements = parser.parse()
         if self.had_error:
             return
-        # Interpret
+        # Resolve (Static Analysis on AST)
+        resolver = Resolver(self.interpreter)
+        resolver.resolve(statements)
+        if self.had_error:
+            return
+        # Interpret (Execute AST)
         self.interpreter.interpret(statements)
 
     def run_prompt(self) -> None:
@@ -49,6 +53,12 @@ class Pylox:
         self.report(line, "", message)
 
     def parser_error(self, token: Token, message: str) -> None:
+        if token.type == TokenType.EOF:
+            self.report(token.line, " at end", message)
+        else:
+            self.report(token.line, f" at '{token.lexeme}'", message)
+
+    def resolver_error(self, token: Token, message: str) -> None:
         if token.type == TokenType.EOF:
             self.report(token.line, " at end", message)
         else:
