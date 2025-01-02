@@ -1,6 +1,5 @@
 from typing import List
-from interpreter.callable import Clock, LoxCallable, LoxFunction
-from scanner import Token, TokenType
+from scanner import Token
 from parser.expr import (
     Call,
     Expr,
@@ -25,8 +24,6 @@ from parser.stmt import (
     Function,
     Visitor as StmtVisitor,
 )
-from interpreter.environment import Environment
-from interpreter.error import Return as ReturnError, RuntimeError
 from enum import Enum, auto
 
 
